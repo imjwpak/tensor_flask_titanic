@@ -9,6 +9,11 @@ ticket	티켓번호
 fare	티켓의 요금
 cabin	객식번호
 embarked	승선한 항구명	C = 쉐부로, Q = 퀜즈타운, S = 사우스햄튼
+
+Index(['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp',
+       'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked'],
+      dtype='object')
+
 '''
 import pandas as pd
 import numpy as np
@@ -22,7 +27,7 @@ class TitanicModel:
         self._test_id = None
 
     @property # 인스턴스 변수
-    def context(self) -> object:return self._context # getter : Java에서 getContext라고 보면 됨
+    def context(self) -> object:return self._context # getter : Java에서 getContext라고 보면 됨 화살표는 return 값이라고 생각.
 
     @context.setter
     def context(self, context): self._context = context # setter
@@ -52,7 +57,7 @@ class TitanicModel:
     def test_id(self, test_id): self._test_id = test_id
     
     # -> 이게 있으면 getter라고 보면 됨
-    def new_file(self) -> str: return self._context + self._fname # lambda 메모리를 쓰는건
+    def new_file(self) -> str: return self._context + self._fname
 
     def new_dfame(self) -> object:
         file = self.new_file()
@@ -60,15 +65,125 @@ class TitanicModel:
 
     # 프로세스 정리. 다른 곳에서 이걸 호출해서 사용됨. feature 정리할때 사용.
     def hook_process(self, train, test) -> object:
-        print('---------------1.  ------------------------')
-        print('---------------2.  ------------------------')
-        print('---------------3.  ------------------------')
-        
+        print('---------------1. Cabin, Ticket 삭제 ------------------------')
+        # t는 temp로 보면 됨
+        t = self.drop_feature(train, test, 'Cabin')
+        t = self.drop_feature(t[0], t[1], 'Ticket')
+        print('---------------2. embarked 승선한 항구명 nominal 편집 ------------------------')
+        t = self.embarked_norminal(t[0], t[1])
+        print('---------------3. Title 편집 ------------------------')
+        t = self.title_nominal(t[0], t[1])
+        print('---------------4. Name, PassengerId 삭제 ------------------------')
+        t = self.drop_feature(t[0], t[1], 'Name')
+        self._test_id = test['PassengerId']
+        t = self.drop_feature(t[0], t[1], 'PassengerId')
+        print('---------------5. Age 편집 ------------------------')
+        t = self.age_ordinal(t[0], t[1])
+        print('---------------6. Fare ordinal 편집 ------------------------')
+        t = self.fare_ordinal(t[0], t[1])
+        print('---------------7. Fare 삭제 ------------------------')
+        t = self.drop_feature(t[0], t[1], 'Fare')
+        print('---------------8. Sex norminal 편집 ------------------------')
+        t = self.sex_nominal(t[0], t[1])
+        t[1] = t[1].fillna({'FareBand' : 1})
+        a = self.null_sum(t[1])
+        print(f'널의 수량 {a}개')
+        self._test = t[1]
 
+        return t[0]
 
+    @staticmethod
+    def null_sum(train) -> int:
+        return train.isnull().sum()
 
+    @staticmethod
+    def drop_feature(train, test, feature) -> []:
+        train = train.drop([feature], axis = 1)
+        test = test.drop([feature], axis = 1)
+        return [train, test]
 
+    @staticmethod
+    def embarked_norminal(train, test) -> []:
+        # c_city = train[train['Embarked'] == 'C'].shape[0]
+        # s_city = train[train['Embarked'] == 'S'].shape[0]
+        # q_city = train[train['Embarked'] == 'Q'].shape[0]
 
+        train = train.fillna({'Embarked' : 'S'})
+        city_mapping = {'S': 1, 'C': 2, 'Q' : 3}
+        train['Embarked'] = train['Embarked'].map(city_mapping)
+        test['Embarked'] = test['Embarked'].map(city_mapping)
+
+        return [train, test]
+
+    @staticmethod
+    def title_nominal(train, test) -> []:
+        combine = [train, test]
+        for dataset in combine:
+            # 이름을 Title로 만듬
+            # 정규표현식에서 여러 글자는 ([]) 사용
+            dataset['Title'] = dataset.Name.str.extract('([A-Za-z]+)\.', expand=False)
+
+        for dataset in combine:
+            dataset['Title'] \
+                = dataset['Title'].replace(['Capt', 'Col', 'Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona'], 'Rare')
+            dataset['Title'] \
+                = dataset['Title'].replace(['Countess', 'Lady', 'Sir'], 'Royal')
+            dataset['Title'] \
+                = dataset['Title'].replace(['Mile','Ms', ], 'Miss')
+
+        train[['Title', 'Survived']].groupby(['Title'], as_index=False).mean()
+        #print(train[['Title', 'Survived']].groupby(['Title'], as_index=False).mean())
+
+        title_mapping = {'Mr' : 1, 'Miss' : 2, 'Mrs' : 3, 'Master' : 4, 'Royal' : 5, 'Rare' : 6, 'Mne' : 7}
+
+        for dataset in combine:
+            dataset['Title'] = dataset['Title'].map(title_mapping)
+            dataset['Title'] = dataset['Title'].fillna(0)
+
+        return [train, test]
+
+    @staticmethod
+    def sex_nominal(train, test) -> []:
+        combine = [train, test]
+        sex_mapping = {'male' : 0, 'female' : 1}
+
+        for dataset in combine:
+            dataset['Sex'] = dataset['Sex'].map(sex_mapping)
+
+        return [train, test]
+
+    @staticmethod
+    def age_ordinal(train, test) -> []:
+        # Unknown을 -1에서 0 사이로 넣어주기 위해서
+        train['Age'] = train['Age'].fillna(-0.5)
+        test['Age'] = test['Age'].fillna(-0.5)
+        bins = [-1, 0, 5, 12, 18, 24, 35, 60, np.inf]
+        labels = ['Unknown', 'Baby', 'Child', 'Teenager', 'Student', 'Young Adult', 'Adult', 'Senior']
+        train['AgeGroup'] = pd.cut(train['Age'], bins, labels=labels)
+        test['AgeGroup'] = pd.cut(test['Age'], bins, labels=labels)
+        age_title_mapping = {0 : 'Unknown', 1 : 'Baby', 2 : 'Child', 3 : 'Teenager',
+                             4: 'Student', 5 : 'Young Adult', 6 : 'Adult', 7 : 'Senior'}
+        for x in range(len(train['AgeGroup'])):
+            if train['AgeGroup'][x] == 'Unknown':
+                train['AgeGroup'][x] = age_title_mapping[train['Title'][x]]
+        for x in range(len(test['AgeGroup'])):
+            if test['AgeGroup'][x] == 'Unknown':
+                test['AgeGroup'][x] = age_title_mapping[test['Title'][x]]
+
+        age_mapping = {'Unknown' : 0, 'Baby' : 1, 'Child' : 2, 'Teenager' : 3,
+                       'Student' : 4, 'Young Adult' : 5, 'Adult' : 6, 'Senior' : 7}
+
+        train['AgeGroup'] = train['AgeGroup'].map(age_mapping)
+        test['AgeGroup'] = test['AgeGroup'].map(age_mapping)
+        print(train['AgeGroup'].head())
+        return [train, test]
+    
+    @staticmethod
+    def fare_ordinal(train, test) -> []:
+        # qcut 알아서 4등분 해줌
+        train['FareBand'] = pd.qcut(train['Fare'], 4, labels={1, 2, 3, 4})
+        test['FareBand'] = pd.qcut(test['Fare'], 4, labels={1, 2, 3, 4})
+        return [train, test]
 
 
 
