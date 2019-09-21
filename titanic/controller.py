@@ -18,14 +18,24 @@ class TitanicController:
         m.fname = 'test.csv'
         t2 = m.new_dfame()
 
-        train = m.hook_process(t1, t2)
+        return m.hook_process(t1, t2)
 
-        #print('------------------ train head & column -------------------')
-        #print(t1.head())
-        #print(t1.columns)
+    def create_model(self) -> object:
+        train = self._train
+        model = train.drop('Survived', axis=1)
+        print('----- Model Info -----')
+        print(model.info)
 
-        print('------------------ train head & column -------------------')
-        print(train.head())
-        print(train.columns)
+        return model
+    # dummy는 정답
+    def create_dummy(self) -> object:
+        train = self._train
+        dummy = train['Survived']
+        return dummy
 
+    def test_all(self):
+        model = self.create_model()
+        dummy = self.create_dummy()
+        m = self._m
+        m.hook_test(model, dummy)
 

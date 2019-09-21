@@ -24,11 +24,17 @@ if __name__ == '__main__':
             t = ctrl.create_train()
             print('** t 모델 **')
             print(t)
-            #break
+            break
         elif menu == '2':
             vw = TitanicView()
             t = vw.create_train()
             #vw.plot_survived_dead(t)
-            vw.plot_set(t)
+            #vw.plot_set(t)
             #vw.bar_chart(t, 'Pclass')
+            break
+        elif menu == '3':
+            ctrl = TitanicController()
+            t = ctrl.create_train()
+            ctrl.test_all()
+
 
