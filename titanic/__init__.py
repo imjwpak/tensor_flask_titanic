@@ -8,6 +8,7 @@ if __name__ == '__main__':
         print('1. LEARNING MACHINE')
         print('2. VIEW : plot_survived_dead')
         print('3. TEST ACCURACY')
+        print('4. SUBMIT')
 
         return input('CHOOSE ONE : ')
 
@@ -36,5 +37,8 @@ if __name__ == '__main__':
             ctrl = TitanicController()
             t = ctrl.create_train()
             ctrl.test_all()
-
+        elif menu == '4':
+            ctrl = TitanicController()
+            t = ctrl.create_train()
+            ctrl.submit()
 
