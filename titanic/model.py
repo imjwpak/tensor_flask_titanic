@@ -27,31 +27,31 @@ class TitanicModel:
         self._test_id = None
 
     @property # 인스턴스 변수
-    def context(self) -> object:return self._context # getter : Java에서 getContext라고 보면 됨 화살표는 return 값이라고 생각.
+    def context(self) -> object: return self._context # getter : Java에서 getContext라고 보면 됨 화살표는 return 값이라고 생각.
 
     @context.setter
     def context(self, context): self._context = context # setter
 
     @property
-    def fname(self) -> object:return self._fname
+    def fname(self) -> object: return self._fname
 
     @fname.setter
     def fname(self, fname): self._fname = fname
 
     @property
-    def train(self) -> object:return self._train
+    def train(self) -> object: return self._train
 
     @train.setter
     def train(self, train): self._train = train
 
     @property
-    def test(self) -> object:return self._test
+    def test(self) -> object: return self._test
 
     @test.setter
     def test(self, test): self._test = test
 
     @property
-    def test_id(self) -> object:return self._test_id
+    def test_id(self) -> object: return self._test_id
 
     @test_id.setter
     def test_id(self, test_id): self._test_id = test_id

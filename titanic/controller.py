@@ -27,3 +27,5 @@ class TitanicController:
         print('------------------ train head & column -------------------')
         print(train.head())
         print(train.columns)
+
+
